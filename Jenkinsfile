@@ -18,3 +18,7 @@ library changelog: false, identifier: pipelineSharedLibrary
 
 welcomeJob.call(USER)
 
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: '', numToKeepStr: '3')),
+])
+
