@@ -1,16 +1,20 @@
-pipeline {
-  agent any
-  stages {
-    stage('Example') {
-      steps {
-        echo 'Hello World'
-        script {
-          def browsers = ['chrome', 'firefox']
-          for (int i = 0; i < browsers.size(); ++i) {
-            echo "Testing the ${browsers[i]} browser"
-          }
-        }
-      }
-    }
-  }
-}
+#!groovy
+
+env.USER = "kobishi"
+env.VERSION = "1.2.3"
+
+basicJobParams=[
+  string(name: 'param1' , defaultValue: 'first-shared-lib' , description: 'Name of shared pipeline'),
+  string(name: 'param2' , defaultValue: 'main' , description: 'Name of branch'),
+  string(name: 'param3' , defaultValue: 'Kobi Shikly' , description: 'User name')
+]
+
+properties([
+  parameters(basicJobParams)
+])			
+
+def pipelineSharedLibrary = "${param1}@${param2}"
+library changelog: false, identifier: pipelineSharedLibrary
+
+welcomeJob.call("${param3}")
+
