@@ -11,14 +11,11 @@ basicJobParams=[
 
 properties([
   parameters(basicJobParams)
+  buildDiscarder(logRotator(daysToKeepStr: '', numToKeepStr: '3')),
 ])			
 
 def pipelineSharedLibrary = "${param1}@${param2}"
 library changelog: false, identifier: pipelineSharedLibrary
 
 welcomeJob.call(USER)
-
-properties([
-  buildDiscarder(logRotator(daysToKeepStr: '', numToKeepStr: '3')),
-])
 
