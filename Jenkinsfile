@@ -10,7 +10,7 @@ basicJobParams=[
 ]
 
 properties([
-  parameters(basicJobParams)
+  parameters(basicJobParams),
   buildDiscarder(logRotator(daysToKeepStr: '', numToKeepStr: '3')),
 ])			
 
