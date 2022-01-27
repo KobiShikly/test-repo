@@ -1,6 +1,6 @@
 #!groovy
 
-env.USER = "kobishi"
+env.USER = "Kobi Shikly"
 env.VERSION = "1.2.3"
 
 basicJobParams=[
@@ -16,5 +16,5 @@ properties([
 def pipelineSharedLibrary = "${param1}@${param2}"
 library changelog: false, identifier: pipelineSharedLibrary
 
-welcomeJob.call("${param3}")
+welcomeJob.call(USER)
 
