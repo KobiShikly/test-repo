@@ -995,9 +995,17 @@ function updateStreak() {
 }
 
 function nextQuestion() {
+  // Win condition: player reached the finish point on the track
+  if (state.trackPos >= 10) { showResults(); return; }
+
   state.current++;
-  if (state.current >= state.questions.length) showResults();
-  else renderQuestion();
+
+  // If the queue is exhausted but the track hasn't been finished yet, generate more questions
+  if (state.current >= state.questions.length) {
+    state.questions.push(generateQuestion(state.min, state.max, state.ops, state.allowNegSub));
+  }
+
+  renderQuestion();
 }
 
 // ============================================================
