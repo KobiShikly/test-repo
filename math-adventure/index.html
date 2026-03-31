@@ -128,10 +128,29 @@
     }
     .hive-row:last-child { margin-bottom: 0; }
     .hive-row-offset { margin-left: 82px; }
-    .btn-answer {
+
+    /* Wrapper provides the visible hex border via its background color */
+    .hex-wrap {
       clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
       width: 155px;
       height: 134px;
+      background: #c8d6f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+      transition: background 0.15s, filter 0.15s;
+    }
+    .hex-wrap:has(.btn-answer:hover:not(:disabled)) { background: var(--accent); filter: drop-shadow(0 3px 10px rgba(67,97,238,0.35)); }
+    .hex-wrap:has(.btn-answer.correct) { background: var(--correct); filter: drop-shadow(0 2px 10px rgba(46,160,67,0.40)); }
+    .hex-wrap:has(.btn-answer.wrong)   { background: var(--wrong);   filter: drop-shadow(0 2px 10px rgba(231,76,60,0.40)); }
+
+    /* Inner button — slightly smaller hex, fills wrapper leaving border visible */
+    .btn-answer {
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+      width: 147px;
+      height: 127px;
       background: #f5f8ff;
       color: var(--navy);
       font-size: 1.45em;
@@ -139,15 +158,14 @@
       border: none;
       border-radius: 0;
       padding: 0;
-      margin-bottom: 0;
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.10));
-      transition: transform 0.12s, background 0.15s, filter 0.15s;
+      margin: 0;
+      transition: transform 0.12s, background 0.15s;
       direction: ltr; unicode-bidi: isolate;
     }
-    .btn-answer:hover:not(:disabled) { background: #e8f0ff; filter: drop-shadow(0 3px 10px rgba(67,97,238,0.30)); }
-    .btn-answer:focus-visible        { outline: none; filter: drop-shadow(0 0 0 4px rgba(67,97,238,0.5)); }
-    .btn-answer.correct { background: #d5f5e3; color: #1a7a45; filter: drop-shadow(0 2px 8px rgba(46,160,67,0.35)); }
-    .btn-answer.wrong   { background: #fde8e8; color: #a93226; filter: drop-shadow(0 2px 8px rgba(231,76,60,0.35)); }
+    .btn-answer:hover:not(:disabled) { background: #e8f0ff; }
+    .btn-answer:focus-visible        { outline: none; }
+    .btn-answer.correct { background: #d5f5e3; color: #1a7a45; }
+    .btn-answer.wrong   { background: #fde8e8; color: #a93226; }
 
     /* ===== OPERATIONS SELECTOR ===== */
     .ops-section { margin-bottom: 20px; }
@@ -400,12 +418,12 @@
 
       <div id="choicesContainer">
         <div class="hive-row">
-          <button class="btn btn-answer" data-index="0" tabindex="1"></button>
-          <button class="btn btn-answer" data-index="1" tabindex="2"></button>
+          <div class="hex-wrap"><button class="btn btn-answer" data-index="0" tabindex="1"></button></div>
+          <div class="hex-wrap"><button class="btn btn-answer" data-index="1" tabindex="2"></button></div>
         </div>
         <div class="hive-row hive-row-offset">
-          <button class="btn btn-answer" data-index="2" tabindex="3"></button>
-          <button class="btn btn-answer" data-index="3" tabindex="4"></button>
+          <div class="hex-wrap"><button class="btn btn-answer" data-index="2" tabindex="3"></button></div>
+          <div class="hex-wrap"><button class="btn btn-answer" data-index="3" tabindex="4"></button></div>
         </div>
       </div>
 
