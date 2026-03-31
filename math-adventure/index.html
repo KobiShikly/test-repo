@@ -609,7 +609,15 @@ function generateQuestion(min, max, ops, allowNegSub) {
   } else { // '-'
     a = randInt(min, max);
     // When negative results are not allowed, ensure b <= a so a − b >= 0
-    b = allowNegSub ? randInt(min, max) : randInt(min, a);
+    // b must never be zero (per game rules)
+    const subMax = allowNegSub ? max : a;
+    const subCandidates = [];
+    for (let v = min; v <= subMax; v++) if (v !== 0) subCandidates.push(v);
+    if (subCandidates.length === 0) {
+      // No valid b — fall back to addition
+      return generateQuestion(min, max, ops.filter(o => o !== '-').length ? ops.filter(o => o !== '-') : ['+'], allowNegSub);
+    }
+    b = subCandidates[Math.floor(Math.random() * subCandidates.length)];
     answer = a - b;
   }
 
