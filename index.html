@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Adventure 🌟</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #1a2e5a;
+      --white:  #ffffff;
+      --bg:     #f0f4ff;
+      --accent: #4a90e2;
+      --correct:#2ecc71;
+      --wrong:  #e74c3c;
+      --gold:   #f39c12;
+      --shadow: 0 4px 24px rgba(0,0,0,0.12);
+      --radius: 18px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--navy);
+      font-size: 18px;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; width: 100%; max-width: 560px; padding: 20px 16px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; animation: fadeIn 0.3s ease; }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      width: 100%;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h1 { font-size: 2.2em; text-align: center; margin-bottom: 6px; }
+    h2 { font-size: 1.6em; text-align: center; margin-bottom: 20px; }
+    .subtitle { text-align: center; color: #6677aa; margin-bottom: 28px; font-size: 1.05em; }
+
+    /* ===== FORM ===== */
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.95em; }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #c8d6f0;
+      border-radius: 10px;
+      font-size: 1.05em;
+      color: var(--navy);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 20px;
+      background: #f8faff;
+    }
+    input:focus { border-color: var(--accent); background: var(--white); }
+
+    .row { display: flex; gap: 16px; }
+    .row > * { flex: 1; }
+
+    .timer-checkbox-row { margin-bottom: 24px; }
+    .timer-chip {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 11px 16px;
+      border: 2px solid #c8d6f0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.98em; font-weight: 600;
+      background: #f5f8ff;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      user-select: none;
+      width: 100%;
+    }
+    .timer-chip input[type="checkbox"] {
+      width: 18px; height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .timer-chip:has(input:checked) { border-color: var(--accent); background: #e8f0ff; color: var(--accent); }
+    .timer-chip.disabled { opacity: 0.45; cursor: not-allowed; }
+    .timer-chip.disabled input { pointer-events: none; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 28px;
+      border: none; border-radius: 12px;
+      font-size: 1.1em; font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+      min-height: 52px; min-width: 52px;
+      outline: none;
+    }
+    .btn:hover  { transform: translateY(-2px); filter: brightness(1.06); }
+    .btn:active { transform: translateY(0); }
+    .btn:focus-visible { box-shadow: 0 0 0 3px #4a90e27a; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      width: 100%;
+      font-size: 1.25em;
+      padding: 16px;
+      box-shadow: 0 4px 18px #4a90e240;
+      border-radius: 14px;
+    }
+
+    .btn-answer {
+      background: #f5f8ff;
+      color: var(--navy);
+      width: 100%;
+      font-size: 1.45em;
+      font-weight: 700;
+      padding: 18px 14px;
+      border: 3px solid #c8d6f0;
+      border-radius: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: transform 0.12s, border-color 0.15s, background 0.15s;
+      /* Answer values (numbers) are always left-to-right */
+      direction: ltr; unicode-bidi: isolate;
+    }
+    .btn-answer:last-child { margin-bottom: 0; }
+    .btn-answer:hover:not(:disabled) { border-color: var(--accent); background: #e8f0ff; }
+    .btn-answer:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .btn-answer.correct { background: #d5f5e3; border-color: var(--correct); color: #1a7a45; }
+    .btn-answer.wrong   { background: #fde8e8; border-color: var(--wrong);   color: #a93226; }
+
+    /* ===== OPERATIONS SELECTOR ===== */
+    .ops-section { margin-bottom: 20px; }
+    .ops-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .op-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 14px;
+      border: 2px solid #c8d6f0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1em; font-weight: 600;
+      background: #f5f8ff;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .op-chip input[type="checkbox"] { display: none; }
+    .op-chip:has(input:checked) { border-color: var(--accent); background: #e8f0ff; color: var(--accent); }
+    .op-chip:hover { border-color: var(--accent); }
+    .ops-error { display: none; color: var(--wrong); font-size: 0.88em; margin-top: 6px; font-weight: 600; }
+    .ops-error.visible { display: block; }
+
+    /* ===== MUTE BUTTON ===== */
+    .btn-mute {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(255,255,255,0.92);
+      border: 2px solid #c8d6f0;
+      border-radius: 50%;
+      width: 48px; height: 48px;
+      font-size: 1.35em;
+      padding: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 20;
+      cursor: pointer;
+      transition: transform 0.12s;
+    }
+    .btn-mute:hover { transform: scale(1.1); }
+
+    /* ===== GAME HEADER ===== */
+    .game-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      gap: 12px; margin-bottom: 16px;
+    }
+
+    .score-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--navy); color: white;
+      padding: 6px 16px; border-radius: 20px;
+      font-weight: 700; font-size: 1em;
+    }
+
+    .streak-badge {
+      display: none; align-items: center; gap: 4px;
+      background: #fff3cd; border: 2px solid var(--gold);
+      color: #856404; padding: 4px 12px;
+      border-radius: 12px; font-weight: 700; font-size: 0.92em;
+    }
+    .streak-badge.visible { display: inline-flex; }
+
+    /* ===== PROGRESS ===== */
+    .progress-container { width: 100%; margin-bottom: 20px; }
+    .progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.9em; color: #6677aa; margin-bottom: 6px;
+    }
+    .progress-bar-bg {
+      width: 100%; height: 12px;
+      background: #dce8f8; border-radius: 6px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #7ec8e3);
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+
+    /* ===== QUESTION ===== */
+    .question-text {
+      font-size: 3em; font-weight: 800; text-align: center;
+      color: var(--navy); margin: 18px 0 22px;
+      letter-spacing: 1px; line-height: 1.15;
+      /* Math expressions are always left-to-right regardless of page direction */
+      direction: ltr; unicode-bidi: isolate;
+    }
+
+    .feedback {
+      text-align: center; font-size: 1.2em; font-weight: 700;
+      min-height: 34px; margin-bottom: 12px;
+    }
+    .feedback.correct { color: var(--correct); }
+    .feedback.wrong   { color: var(--wrong); }
+
+    /* ===== TIMER RING ===== */
+    .timer-ring { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .ring-bg   { stroke: #dce8f8; }
+    .ring-fill {
+      stroke: var(--accent);
+      stroke-dasharray: 170;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear, stroke 0.3s;
+    }
+    .ring-fill.urgent { stroke: var(--wrong); }
+    .timer-text {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.2em; color: var(--navy);
+    }
+
+    /* ===== RESULTS ===== */
+    .stars-display { font-size: 3em; text-align: center; margin: 20px 0; letter-spacing: 4px; }
+    .stars-display span { display: inline-block; opacity: 0; transform: scale(0); }
+    .stars-display span.show { animation: starPop 0.4s ease forwards; }
+
+    .result-score   { font-size: 2em; font-weight: 800; text-align: center; color: var(--navy); margin-bottom: 8px; }
+    .result-message { text-align: center; font-size: 1.1em; color: #6677aa; margin-bottom: 28px; }
+
+    /* ===== SCREEN WRAPPER ===== */
+    .screen-wrapper { position: relative; width: 100%; max-width: 560px; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-8px); }
+      40%     { transform: translateX(8px); }
+      60%     { transform: translateX(-6px); }
+      80%     { transform: translateX(6px); }
+    }
+    @keyframes pulse {
+      0%,100% { transform: scale(1); }
+      50%     { transform: scale(1.04); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes starPop {
+      0%   { transform: scale(0); opacity: 0; }
+      60%  { transform: scale(1.35); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .shake { animation: shake 0.38s ease; }
+    .pulse { animation: pulse 0.28s ease; }
+
+    /* ===== LANGUAGE SWITCHER ===== */
+    .lang-switcher {
+      display: flex; justify-content: flex-end; gap: 6px;
+      margin-bottom: 18px;
+    }
+    .lang-btn {
+      padding: 5px 14px;
+      border: 2px solid #c8d6f0; border-radius: 8px;
+      font-size: 0.88em; font-weight: 700;
+      cursor: pointer; background: #f5f8ff; color: var(--navy);
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    .lang-btn.active { border-color: var(--accent); background: #e8f0ff; color: var(--accent); }
+    [dir="rtl"] .lang-switcher { justify-content: flex-start; }
+  </style>
+</head>
+<body>
+
+<div class="screen-wrapper">
+
+  <!-- Mute button — always visible -->
+  <button class="btn btn-mute" id="muteBtn" aria-label="Mute sound">🔊</button>
+
+  <!-- ===== START SCREEN ===== -->
+  <div class="screen active" id="startScreen">
+    <div class="card">
+      <div class="lang-switcher">
+        <button class="lang-btn" data-lang="en">English</button>
+        <button class="lang-btn active" data-lang="he">עברית</button>
+      </div>
+
+      <h1 id="gameTitle"></h1>
+      <p class="subtitle" id="gameSubtitle"></p>
+
+      <label for="nameInput" id="nameLbl"></label>
+      <input type="text" id="nameInput" value="דוד" maxlength="20" autocomplete="off">
+
+      <div class="row">
+        <div>
+          <label for="minInput" id="minLbl"></label>
+          <input type="number" id="minInput" value="0" min="-100" max="100">
+        </div>
+        <div>
+          <label for="maxInput" id="maxLbl"></label>
+          <input type="number" id="maxInput" value="10" min="-100" max="100">
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <label id="opsLbl"></label>
+        <div class="ops-grid">
+          <label class="op-chip"><input type="checkbox" name="op" value="+" checked><span id="opAddSpan"></span></label>
+          <label class="op-chip"><input type="checkbox" name="op" value="-" checked><span id="opSubSpan"></span></label>
+          <label class="op-chip"><input type="checkbox" name="op" value="×"><span id="opMulSpan"></span></label>
+          <label class="op-chip"><input type="checkbox" name="op" value="÷"><span id="opDivSpan"></span></label>
+        </div>
+        <div class="ops-error" id="opsError"></div>
+      </div>
+
+      <div class="timer-checkbox-row" id="negSubRow">
+        <label class="timer-chip">
+          <input type="checkbox" id="negSubToggle">
+          <span id="negSubLbl"></span>
+        </label>
+      </div>
+
+      <div class="timer-checkbox-row">
+        <label class="timer-chip">
+          <input type="checkbox" id="timerToggle">
+          <span id="timerLbl"></span>
+        </label>
+      </div>
+
+      <button class="btn btn-primary" id="playBtn"></button>
+    </div>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div class="screen" id="gameScreen">
+    <div class="card" id="gameCard">
+
+      <div class="game-header">
+        <div class="score-badge">⭐ <span id="scoreDisplay">0</span></div>
+        <div class="streak-badge" id="streakBadge"></div>
+        <div class="timer-ring" id="timerRing" style="display:none">
+          <svg width="60" height="60" viewBox="0 0 60 60">
+            <circle class="ring-bg"   cx="30" cy="30" r="27" fill="none" stroke-width="6"/>
+            <circle class="ring-fill" id="timerCircle" cx="30" cy="30" r="27" fill="none" stroke-width="6"/>
+          </svg>
+          <div class="timer-text" id="timerText">15</div>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-label">
+          <span id="progressLabel">Question 1 of 10</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="question-text" id="questionText">? + ? = ?</div>
+      <div class="feedback" id="feedbackText"></div>
+
+      <div id="choicesContainer">
+        <button class="btn btn-answer" data-index="0" tabindex="1"></button>
+        <button class="btn btn-answer" data-index="1" tabindex="2"></button>
+        <button class="btn btn-answer" data-index="2" tabindex="3"></button>
+        <button class="btn btn-answer" data-index="3" tabindex="4"></button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== RESULTS SCREEN ===== -->
+  <div class="screen" id="resultsScreen">
+    <div class="card">
+      <h2 id="resultsTitle">Well done, David! 🎉</h2>
+      <div class="stars-display" id="starsDisplay">
+        <span>⭐</span><span>⭐</span><span>⭐</span>
+      </div>
+      <div class="result-score"   id="resultScore">0 / 10</div>
+      <div class="result-message" id="resultMessage"></div>
+      <button class="btn btn-primary" id="playAgainBtn"></button>
+    </div>
+  </div>
+
+</div><!-- .screen-wrapper -->
+
+<script>
+// ============================================================
+//  AUDIO  (Web Audio API — no external files)
+// ============================================================
+let audioCtx = null;
+let muted    = false;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(freq, dur, type = 'sine', vol = 0.22, delay = 0) {
+  if (muted) return;
+  try {
+    const ctx  = getCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + dur + 0.01);
+  } catch (e) { /* audio unavailable — ignore */ }
+}
+
+function playCorrect() {
+  playTone(523, 0.12, 'sine', 0.22, 0.00);  // C5
+  playTone(659, 0.12, 'sine', 0.22, 0.10);  // E5
+  playTone(784, 0.18, 'sine', 0.22, 0.20);  // G5
+}
+function playWrong() {
+  playTone(320, 0.09, 'sine',    0.18, 0.00);
+  playTone(260, 0.25, 'sawtooth',0.10, 0.08);
+}
+function playFanfare() {
+  [523, 659, 784, 1047].forEach((f, i) => playTone(f, 0.16, 'sine', 0.22, i * 0.13));
+}
+function playClick() {
+  playTone(900, 0.04, 'square', 0.08);
+}
+
+// ============================================================
+//  TRANSLATIONS
+// ============================================================
+const LANG = {
+  he: {
+    dir: 'rtl',
+    defaultName: 'דוד',
+    title: 'הרפתקת מתמטיקה 🌟',
+    subtitle: 'תרגול חיבור, חיסור, כפל וחילוק!',
+    nameLbl: 'שמך',
+    minLbl: 'מספר מינימום',
+    maxLbl: 'מספר מקסימום',
+    opsLbl: 'פעולות חשבון',
+    opAdd: '+ חיבור',
+    opSub: '− חיסור',
+    opMul: '× כפל',
+    opDiv: '÷ חילוק',
+    opsError: 'אנא בחר לפחות פעולה אחת.',
+    negSubLbl: '➖ אפשר תוצאות חיסור שליליות',
+    timerLbl: '⏱️ טיימר ספירה לאחור (15 שניות לשאלה)',
+    playBtn: '!שחק 🚀',
+    questionOf: (n, t) => `שאלה ${n} מתוך ${t}`,
+    streakHTML: (n) => `🔥 ${n} רצף!`,
+    correctMsgs: ['כל הכבוד! 🌟', 'מעולה! ✨', 'נכון! 🎉', 'מבריק! 💡', 'סטאר! ⭐'],
+    wrongMsgs: ['לא בדיוק — המשך! 💪', 'כמעט! נסה הבא! 🌈', 'אתה יכול! 🚀'],
+    timeUp: '!הזמן נגמר ⏰',
+    wellDone: (name) => `!כל הכבוד, ${name} 🎉`,
+    resultMsgs: {
+      3: ['!אתה כוכב מתמטיקה 🌟', '!מדהים — גאון 🧠', '!מצוין — ראש הכיתה 🏆'],
+      2: ['!עבודה טובה — המשך להתאמן 💪', '!יפה — אתה משתפר 📈'],
+      1: ['המשך — אתה יכול! 🌈', 'תרגול עושה מאסטר! 🎯'],
+    },
+    playAgain: 'שחק שוב 🔄',
+  },
+  en: {
+    dir: 'ltr',
+    defaultName: 'David',
+    title: 'Math Adventure 🌟',
+    subtitle: 'Practice addition, subtraction, multiplication & division!',
+    nameLbl: 'Your name',
+    minLbl: 'Min number',
+    maxLbl: 'Max number',
+    opsLbl: 'Operations',
+    opAdd: '+ Add',
+    opSub: '− Subtract',
+    opMul: '× Multiply',
+    opDiv: '÷ Divide',
+    opsError: 'Please select at least one operation.',
+    negSubLbl: '➖ Allow negative subtraction results',
+    timerLbl: '⏱️ Countdown timer (15s per question)',
+    playBtn: '🚀 Play!',
+    questionOf: (n, t) => `Question ${n} of ${t}`,
+    streakHTML: (n) => `🔥 ${n} streak!`,
+    correctMsgs: ['Great job! 🌟', 'Awesome! ✨', 'You got it! 🎉', 'Brilliant! 💡', 'Superstar! ⭐'],
+    wrongMsgs: ['Not quite — keep going! 💪', 'Almost! Try the next one! 🌈', 'You can do it! 🚀'],
+    timeUp: "⏰ Time's up!",
+    wellDone: (name) => `Well done, ${name}! 🎉`,
+    resultMsgs: {
+      3: ["You're a math superstar! 🌟", "Outstanding! Pure genius! 🧠", "Incredible! Top of the class! 🏆"],
+      2: ["Good work! Keep practising! 💪", "Nice job — you're getting better! 📈"],
+      1: ["Keep going — you can do this! 🌈", "Practice makes perfect! 🎯"],
+    },
+    playAgain: '🔄 Play Again',
+  },
+};
+
+let currentLang = 'he';
+
+function applyLang(langKey) {
+  currentLang = langKey;
+  const t = LANG[langKey];
+  document.documentElement.dir = t.dir;
+
+  document.getElementById('gameTitle').textContent    = t.title;
+  document.getElementById('gameSubtitle').textContent = t.subtitle;
+  document.getElementById('nameLbl').textContent      = t.nameLbl;
+  document.getElementById('minLbl').textContent       = t.minLbl;
+  document.getElementById('maxLbl').textContent       = t.maxLbl;
+  document.getElementById('opsLbl').textContent       = t.opsLbl;
+  document.getElementById('opAddSpan').textContent    = t.opAdd;
+  document.getElementById('opSubSpan').textContent    = t.opSub;
+  document.getElementById('opMulSpan').textContent    = t.opMul;
+  document.getElementById('opDivSpan').textContent    = t.opDiv;
+  document.getElementById('opsError').textContent     = t.opsError;
+  document.getElementById('negSubLbl').textContent    = t.negSubLbl;
+  document.getElementById('timerLbl').textContent     = t.timerLbl;
+  document.getElementById('playBtn').textContent      = t.playBtn;
+  document.getElementById('playAgainBtn').textContent = t.playAgain;
+
+  // Highlight active lang button
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === langKey);
+  });
+}
+
+// ============================================================
+//  STATE
+// ============================================================
+const TOTAL_Q    = 10;
+const TIMER_SECS = 15;
+const CIRCUMFERENCE = 2 * Math.PI * 27; // ≈ 169.6
+
+let state = {
+  name:         'David',
+  min:          0,
+  max:          10,
+  lang:         LANG.he,
+  ops:          ['+', '-'],
+  allowNegSub:  false,
+  timerEnabled: false,
+  questions:    [],
+  current:      0,
+  score:        0,
+  streak:       0,
+  answering:    false,
+  timerInterval:null,
+  timerLeft:    TIMER_SECS,
+};
+
+// ============================================================
+//  QUESTION GENERATION
+// ============================================================
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const OP_SYMBOL = { '+': '+', '-': '−', '×': '×', '÷': '÷' };
+
+function generateQuestion(min, max, ops, allowNegSub) {
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  let a, b, answer;
+
+  if (op === '÷') {
+    // Build a non-zero divisor list from the range
+    const nonZero = [];
+    for (let v = min; v <= max; v++) if (v !== 0) nonZero.push(v);
+    if (nonZero.length === 0) {
+      // No valid divisors — fall back to addition
+      return generateQuestion(min, max, ops.filter(o => o !== '÷').length ? ops.filter(o => o !== '÷') : ['+']);
+    }
+    b      = nonZero[Math.floor(Math.random() * nonZero.length)]; // divisor (non-zero, in range)
+    answer = randInt(min, max);                                    // quotient (in range)
+    a      = b * answer;                                           // dividend (exact integer result)
+  } else if (op === '×') {
+    a = randInt(min, max);
+    b = randInt(min, max);
+    answer = a * b;
+  } else if (op === '+') {
+    a = randInt(min, max);
+    b = randInt(min, max);
+    answer = a + b;
+  } else { // '-'
+    a = randInt(min, max);
+    // When negative results are not allowed, ensure b <= a so a − b >= 0
+    b = allowNegSub ? randInt(min, max) : randInt(min, a);
+    answer = a - b;
+  }
+
+  // Scale wrong-answer spread to the answer magnitude
+  const baseSpread = Math.max(3, Math.ceil(Math.abs(max - min) * 0.4));
+  const spread = (op === '×' || op === '÷')
+    ? Math.max(baseSpread, Math.ceil(Math.abs(answer) * 0.25) + 1)
+    : baseSpread;
+
+  const wrongSet = new Set();
+  let attempts = 0;
+  while (wrongSet.size < 3 && attempts < 200) {
+    attempts++;
+    const offset = randInt(1, spread);
+    const sign   = Math.random() < 0.5 ? 1 : -1;
+    const w = answer + sign * offset;
+    if (w !== answer) wrongSet.add(w);
+  }
+
+  const choices = [answer, ...wrongSet].sort(() => Math.random() - 0.5);
+  return {
+    display: `${a} ${OP_SYMBOL[op]} ${b} = ?`,
+    answer,
+    choices,
+  };
+}
+
+function generateQuestions(min, max, count, ops, allowNegSub) {
+  const list = [];
+  for (let i = 0; i < count; i++) list.push(generateQuestion(min, max, ops, allowNegSub));
+  return list;
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function getAnswerBtns() {
+  return Array.from(document.querySelectorAll('.btn-answer'));
+}
+
+// ============================================================
+//  TIMER
+// ============================================================
+function startTimer() {
+  clearTimer();
+  if (!state.timerEnabled) return;
+
+  const ring   = document.getElementById('timerRing');
+  const circle = document.getElementById('timerCircle');
+  const text   = document.getElementById('timerText');
+
+  ring.style.display  = '';
+  state.timerLeft     = TIMER_SECS;
+  text.textContent    = TIMER_SECS;
+  circle.style.strokeDashoffset = '0';
+  circle.classList.remove('urgent');
+
+  state.timerInterval = setInterval(() => {
+    state.timerLeft--;
+    text.textContent = state.timerLeft;
+
+    const filled  = (TIMER_SECS - state.timerLeft) / TIMER_SECS;
+    circle.style.strokeDashoffset = CIRCUMFERENCE * filled;
+
+    if (state.timerLeft <= 5) circle.classList.add('urgent');
+    if (state.timerLeft <= 0) { clearTimer(); handleTimeout(); }
+  }, 1000);
+}
+
+function clearTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+}
+
+function handleTimeout() {
+  if (!state.answering) return;
+  state.answering = false;
+  state.streak    = 0;
+  updateStreak();
+  playWrong();
+
+  const fb = document.getElementById('feedbackText');
+  fb.textContent = state.lang.timeUp;
+  fb.className   = 'feedback wrong';
+
+  const q = state.questions[state.current];
+  getAnswerBtns().forEach(btn => {
+    btn.disabled = true;
+    if (Number(btn.dataset.value) === q.answer) btn.classList.add('correct');
+  });
+
+  const card = document.getElementById('gameCard');
+  card.classList.add('shake');
+  setTimeout(() => card.classList.remove('shake'), 400);
+  setTimeout(nextQuestion, 1500);
+}
+
+// ============================================================
+//  GAME LOGIC
+// ============================================================
+function startGame() {
+  const name = document.getElementById('nameInput').value.trim() || 'David';
+  let min = parseInt(document.getElementById('minInput').value, 10);
+  let max = parseInt(document.getElementById('maxInput').value, 10);
+
+  if (isNaN(min)) min = 0;
+  if (isNaN(max)) max = 10;
+  if (min > max)  [min, max] = [max, min];
+  if (min === max) max = min + 1;
+
+  const ops = Array.from(document.querySelectorAll('input[name="op"]:checked')).map(cb => cb.value);
+  const opsError = document.getElementById('opsError');
+  if (ops.length === 0) {
+    opsError.classList.add('visible');
+    return;
+  }
+  opsError.classList.remove('visible');
+
+  const allowNegSub = document.getElementById('negSubToggle').checked;
+
+  state.name         = name;
+  state.lang         = LANG[currentLang];
+  state.min          = min;
+  state.max          = max;
+  state.ops          = ops;
+  state.allowNegSub  = allowNegSub;
+  state.timerEnabled = document.getElementById('timerToggle').checked;
+  state.questions    = generateQuestions(min, max, TOTAL_Q, ops, allowNegSub);
+  state.current      = 0;
+  state.score        = 0;
+  state.streak       = 0;
+  state.answering    = false;
+
+  document.getElementById('timerRing').style.display = state.timerEnabled ? '' : 'none';
+  showScreen('gameScreen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q     = state.questions[state.current];
+  const pct   = (state.current / TOTAL_Q) * 100;
+
+  document.getElementById('progressLabel').textContent = state.lang.questionOf(state.current + 1, TOTAL_Q);
+  document.getElementById('progressFill').style.width  = pct + '%';
+  document.getElementById('scoreDisplay').textContent  = state.score;
+  document.getElementById('questionText').textContent  = q.display;
+  document.getElementById('feedbackText').textContent  = '';
+  document.getElementById('feedbackText').className    = 'feedback';
+
+  const btns = getAnswerBtns();
+  btns.forEach((btn, i) => {
+    btn.textContent     = q.choices[i];
+    btn.dataset.value   = q.choices[i];
+    btn.disabled        = false;
+    btn.className       = 'btn btn-answer';
+    btn.tabIndex        = i + 1;
+  });
+
+  state.answering = true;
+  startTimer();
+  btns[0].focus();
+}
+
+function handleAnswer(btn) {
+  if (!state.answering) return;
+  state.answering = false;
+  clearTimer();
+  playClick();
+
+  const q        = state.questions[state.current];
+  const selected = Number(btn.dataset.value);
+  const correct  = selected === q.answer;
+  const btns     = getAnswerBtns();
+  const card     = document.getElementById('gameCard');
+  const fb       = document.getElementById('feedbackText');
+
+  btns.forEach(b => b.disabled = true);
+
+  if (correct) {
+    state.score++;
+    state.streak++;
+    btn.classList.add('correct');
+    document.getElementById('scoreDisplay').textContent = state.score;
+
+    const msgs = state.lang.correctMsgs;
+    fb.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    fb.className   = 'feedback correct';
+
+    card.classList.add('pulse');
+    setTimeout(() => card.classList.remove('pulse'), 300);
+
+    updateStreak();
+    if (state.streak > 0 && state.streak % 3 === 0) playFanfare();
+    else playCorrect();
+
+  } else {
+    state.streak = 0;
+    btn.classList.add('wrong');
+    btns.forEach(b => { if (Number(b.dataset.value) === q.answer) b.classList.add('correct'); });
+
+    const msgs = state.lang.wrongMsgs;
+    fb.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    fb.className   = 'feedback wrong';
+
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 400);
+
+    updateStreak();
+    playWrong();
+  }
+
+  setTimeout(nextQuestion, 1400);
+}
+
+function updateStreak() {
+  const badge = document.getElementById('streakBadge');
+  badge.innerHTML = state.lang.streakHTML(state.streak);
+  badge.classList.toggle('visible', state.streak >= 2);
+}
+
+function nextQuestion() {
+  state.current++;
+  if (state.current >= TOTAL_Q) showResults();
+  else renderQuestion();
+}
+
+// ============================================================
+//  RESULTS
+// ============================================================
+function showResults() {
+  const pct   = state.score / TOTAL_Q;
+  const stars = pct >= 0.8 ? 3 : pct >= 0.5 ? 2 : 1;
+
+  document.getElementById('resultsTitle').textContent = state.lang.wellDone(state.name);
+  document.getElementById('resultScore').textContent  = `${state.score} / ${TOTAL_Q}`;
+
+  const pool = state.lang.resultMsgs[stars];
+  document.getElementById('resultMessage').textContent = pool[Math.floor(Math.random() * pool.length)];
+
+  const starSpans = document.querySelectorAll('#starsDisplay span');
+  starSpans.forEach((s, i) => {
+    s.textContent = i < stars ? '⭐' : '☆';
+    s.classList.remove('show');
+    s.style.opacity   = '0';
+    s.style.transform = 'scale(0)';
+  });
+
+  showScreen('resultsScreen');
+
+  starSpans.forEach((s, i) => {
+    setTimeout(() => {
+      s.classList.add('show');
+      if (i === stars - 1) {
+        stars === 3 ? playFanfare() : playCorrect();
+      }
+    }, 350 + i * 260);
+  });
+}
+
+// ============================================================
+//  EVENT LISTENERS
+// ============================================================
+document.getElementById('playBtn').addEventListener('click', () => {
+  playClick();
+  startGame();
+});
+
+document.getElementById('playAgainBtn').addEventListener('click', () => {
+  playClick();
+  showScreen('startScreen');
+});
+
+getAnswerBtns().forEach(btn => {
+  btn.addEventListener('click', () => handleAnswer(btn));
+});
+
+document.getElementById('muteBtn').addEventListener('click', () => {
+  muted = !muted;
+  const btn = document.getElementById('muteBtn');
+  btn.textContent  = muted ? '🔇' : '🔊';
+  btn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+});
+
+// Keyboard: Enter on focused answer button
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.classList.contains('btn-answer')) {
+    e.preventDefault();
+    handleAnswer(document.activeElement);
+  }
+});
+
+// Enable/disable "Allow negative subtraction results" checkbox
+function updateNegSubCheckbox() {
+  const min = parseInt(document.getElementById('minInput').value, 10);
+  const max = parseInt(document.getElementById('maxInput').value, 10);
+  // Enabled when max − min >= 0 (raw values, before any normalization)
+  const enabled = !isNaN(min) && !isNaN(max) && (max - min) >= 0;
+  const cb    = document.getElementById('negSubToggle');
+  const chip  = cb.closest('.timer-chip');
+  cb.disabled = !enabled;
+  chip.classList.toggle('disabled', !enabled);
+  if (!enabled) cb.checked = false;
+}
+
+// Ensure max >= min + 1 after blur
+document.getElementById('maxInput').addEventListener('change', () => {
+  const min = parseInt(document.getElementById('minInput').value, 10);
+  const max = parseInt(document.getElementById('maxInput').value, 10);
+  if (!isNaN(min) && !isNaN(max) && max <= min) {
+    document.getElementById('maxInput').value = min + 1;
+  }
+  updateNegSubCheckbox();
+});
+document.getElementById('minInput').addEventListener('change', () => {
+  const min = parseInt(document.getElementById('minInput').value, 10);
+  const max = parseInt(document.getElementById('maxInput').value, 10);
+  if (!isNaN(min) && !isNaN(max) && min >= max) {
+    document.getElementById('minInput').value = max - 1;
+  }
+  updateNegSubCheckbox();
+});
+
+// Language switcher
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    playClick();
+    applyLang(btn.dataset.lang);
+    // Reset name input to language default only if it still matches the other default
+    const otherDefault = btn.dataset.lang === 'he' ? LANG.en.defaultName : LANG.he.defaultName;
+    const nameEl = document.getElementById('nameInput');
+    if (nameEl.value === otherDefault) nameEl.value = LANG[btn.dataset.lang].defaultName;
+  });
+});
+
+// Initialise language and state on page load
+applyLang('he');
+updateNegSubCheckbox();
+</script>
+</body>
+</html>
