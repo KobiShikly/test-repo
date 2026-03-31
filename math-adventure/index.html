@@ -920,14 +920,18 @@ document.addEventListener('keydown', e => {
 function updateNegSubCheckbox() {
   const min = parseInt(document.getElementById('minInput').value, 10);
   const max = parseInt(document.getElementById('maxInput').value, 10);
-  // Enabled when max − min >= 0 (raw values, before any normalization)
-  const enabled = !isNaN(min) && !isNaN(max) && (max - min) >= 0;
+  const subSelected = document.querySelector('input[name="op"][value="-"]').checked;
+  // Enabled only when subtraction is selected and range is valid
+  const enabled = subSelected && !isNaN(min) && !isNaN(max) && (max - min) >= 0;
   const cb    = document.getElementById('negSubToggle');
   const chip  = cb.closest('.timer-chip');
   cb.disabled = !enabled;
   chip.classList.toggle('disabled', !enabled);
   if (!enabled) cb.checked = false;
 }
+
+// Re-evaluate negSub checkbox when subtraction op is toggled
+document.querySelector('input[name="op"][value="-"]').addEventListener('change', updateNegSubCheckbox);
 
 // Ensure max >= min + 1 after blur
 document.getElementById('maxInput').addEventListener('change', () => {
