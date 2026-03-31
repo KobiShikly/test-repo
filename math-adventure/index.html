@@ -114,26 +114,40 @@
       border-radius: 14px;
     }
 
+    /* ===== HIVE / HONEYCOMB ANSWER BUTTONS ===== */
+    #choicesContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .hive-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: -34px;
+    }
+    .hive-row:last-child { margin-bottom: 0; }
+    .hive-row-offset { margin-left: 82px; }
     .btn-answer {
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+      width: 155px;
+      height: 134px;
       background: #f5f8ff;
       color: var(--navy);
-      width: 100%;
       font-size: 1.45em;
       font-weight: 700;
-      padding: 18px 14px;
-      border: 3px solid #c8d6f0;
-      border-radius: 14px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      transition: transform 0.12s, border-color 0.15s, background 0.15s;
-      /* Answer values (numbers) are always left-to-right */
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      margin-bottom: 0;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.10));
+      transition: transform 0.12s, background 0.15s, filter 0.15s;
       direction: ltr; unicode-bidi: isolate;
     }
-    .btn-answer:last-child { margin-bottom: 0; }
-    .btn-answer:hover:not(:disabled) { border-color: var(--accent); background: #e8f0ff; }
-    .btn-answer:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-    .btn-answer.correct { background: #d5f5e3; border-color: var(--correct); color: #1a7a45; }
-    .btn-answer.wrong   { background: #fde8e8; border-color: var(--wrong);   color: #a93226; }
+    .btn-answer:hover:not(:disabled) { background: #e8f0ff; filter: drop-shadow(0 3px 10px rgba(67,97,238,0.30)); }
+    .btn-answer:focus-visible        { outline: none; filter: drop-shadow(0 0 0 4px rgba(67,97,238,0.5)); }
+    .btn-answer.correct { background: #d5f5e3; color: #1a7a45; filter: drop-shadow(0 2px 8px rgba(46,160,67,0.35)); }
+    .btn-answer.wrong   { background: #fde8e8; color: #a93226; filter: drop-shadow(0 2px 8px rgba(231,76,60,0.35)); }
 
     /* ===== OPERATIONS SELECTOR ===== */
     .ops-section { margin-bottom: 20px; }
@@ -319,7 +333,7 @@
       <div class="row">
         <div>
           <label for="minInput" id="minLbl"></label>
-          <input type="number" id="minInput" value="0" min="-100" max="100">
+          <input type="number" id="minInput" value="1" min="-100" max="100">
         </div>
         <div>
           <label for="maxInput" id="maxLbl"></label>
@@ -385,10 +399,14 @@
       <div class="feedback" id="feedbackText"></div>
 
       <div id="choicesContainer">
-        <button class="btn btn-answer" data-index="0" tabindex="1"></button>
-        <button class="btn btn-answer" data-index="1" tabindex="2"></button>
-        <button class="btn btn-answer" data-index="2" tabindex="3"></button>
-        <button class="btn btn-answer" data-index="3" tabindex="4"></button>
+        <div class="hive-row">
+          <button class="btn btn-answer" data-index="0" tabindex="1"></button>
+          <button class="btn btn-answer" data-index="1" tabindex="2"></button>
+        </div>
+        <div class="hive-row hive-row-offset">
+          <button class="btn btn-answer" data-index="2" tabindex="3"></button>
+          <button class="btn btn-answer" data-index="3" tabindex="4"></button>
+        </div>
       </div>
 
     </div>
@@ -583,7 +601,7 @@ function randInt(min, max) {
 
 const OP_SYMBOL = { '+': '+', '-': '−', '×': '×', '÷': '÷' };
 
-function generateQuestion(min, max, ops, allowNegSub) {
+function generateQuestion(min, max, ops, allowNegSub, seenSet) {
   const op = ops[Math.floor(Math.random() * ops.length)];
   let a, b, answer;
 
@@ -638,16 +656,29 @@ function generateQuestion(min, max, ops, allowNegSub) {
   }
 
   const choices = [answer, ...wrongSet].sort(() => Math.random() - 0.5);
-  return {
+  const q = {
     display: `${a} ${OP_SYMBOL[op]} ${b} = ?`,
     answer,
     choices,
   };
+
+  // Avoid repeating a question already seen in this session
+  if (seenSet && seenSet.has(q.display)) {
+    const MAX_DEDUP_RETRIES = 20;
+    if ((seenSet._retries = (seenSet._retries || 0) + 1) < MAX_DEDUP_RETRIES) {
+      return generateQuestion(min, max, ops, allowNegSub, seenSet);
+    }
+    // Exhausted retries (very small range) — allow repeat
+    seenSet._retries = 0;
+  }
+  if (seenSet) seenSet.add(q.display);
+  return q;
 }
 
 function generateQuestions(min, max, count, ops, allowNegSub) {
   const list = [];
-  for (let i = 0; i < count; i++) list.push(generateQuestion(min, max, ops, allowNegSub));
+  const seenSet = new Set();
+  for (let i = 0; i < count; i++) list.push(generateQuestion(min, max, ops, allowNegSub, seenSet));
   return list;
 }
 
@@ -719,7 +750,11 @@ function handleTimeout() {
   const card = document.getElementById('gameCard');
   card.classList.add('shake');
   setTimeout(() => card.classList.remove('shake'), 400);
-  setTimeout(nextQuestion, 1500);
+
+  // Re-queue the timed-out question so it appears again later
+  state.questions.push(q);
+
+  setTimeout(nextQuestion, 3000);
 }
 
 // ============================================================
@@ -765,9 +800,10 @@ function startGame() {
 
 function renderQuestion() {
   const q     = state.questions[state.current];
-  const pct   = (state.current / TOTAL_Q) * 100;
+  const total = state.questions.length;
+  const pct   = (state.current / total) * 100;
 
-  document.getElementById('progressLabel').textContent = state.lang.questionOf(state.current + 1, TOTAL_Q);
+  document.getElementById('progressLabel').textContent = state.lang.questionOf(state.current + 1, total);
   document.getElementById('progressFill').style.width  = pct + '%';
   document.getElementById('scoreDisplay').textContent  = state.score;
   document.getElementById('questionText').textContent  = q.display;
@@ -834,9 +870,12 @@ function handleAnswer(btn) {
 
     updateStreak();
     playWrong();
+
+    // Re-queue the failed question so it appears again later
+    state.questions.push(q);
   }
 
-  setTimeout(nextQuestion, 1400);
+  setTimeout(nextQuestion, correct ? 1400 : 3000);
 }
 
 function updateStreak() {
@@ -847,7 +886,7 @@ function updateStreak() {
 
 function nextQuestion() {
   state.current++;
-  if (state.current >= TOTAL_Q) showResults();
+  if (state.current >= state.questions.length) showResults();
   else renderQuestion();
 }
 
